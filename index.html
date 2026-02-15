@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>СПДВ - Зоны здания</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Убирает серый фон при тапе на iOS */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #1d1d1f;
+        }
+
+        /* Хедер компактнее для мобильных */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header__container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header__logo {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1d1d1f 0%, #434344 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.3px;
+        }
+
+        .main {
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            width: 100%;
+        }
+
+        /* Заголовок компактнее */
+        .page-title {
+            text-align: left; /* На мобильных лучше прижать влево */
+            margin-bottom: 32px;
+            padding: 0 4px;
+        }
+
+        .page-title h1 {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #434344 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        .page-title p {
+            font-size: 17px;
+            color: #86868b;
+            font-weight: 400;
+            max-width: 600px;
+        }
+
+        /* Сетка карточек - вертикальная на мобильных */
+        .cards-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        /* Базовая карточка оптимизирована для тапа пальцем */
+        .apple-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            min-height: 140px; /* Минимальная высота для удобного тапа */
+            cursor: pointer;
+            -webkit-touch-callout: none; /* Отключает меню при долгом тапе */
+        }
+
+        .apple-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0071e3, #42a5f5);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Активное состояние для тапа */
+        .apple-card:active {
+            transform: scale(0.98);
+            background: #f8f8fa;
+        }
+
+        .apple-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Контейнер для верхней части карточки */
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        /* Крупный номер этажа (синий по умолчанию) */
+        .floor-number {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0071e3, #42a5f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        /* Зеленый вариант для карточек клапанов */
+        .apple-card--valve .floor-number {
+            background: linear-gradient(135deg, #28a745, #5cb85c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .zone-info {
+            flex: 1;
+        }
+
+        .zone-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #0071e3;
+            background: rgba(0, 113, 227, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* Зеленый бейдж для клапанов */
+        .apple-card--valve .zone-badge {
+            color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .apple-card h2 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: #1d1d1f;
+            line-height: 1.2;
+        }
+
+        .card-description {
+            font-size: 15px;
+            color: #86868b;
+            margin-bottom: 16px;
+            line-height: 1.4;
+            padding-left: 0; /* Убрали отступ */
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e9e9ed;
+            padding-top: 16px;
+            margin-top: auto;
+        }
+
+        .items-count {
+            font-size: 14px;
+            color: #86868b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .items-count span {
+            font-weight: 600;
+            color: #1d1d1f;
+            font-size: 16px;
+        }
+
+        .arrow {
+            font-size: 18px;
+            color: #0071e3;
+            transition: transform 0.2s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 113, 227, 0.05);
+            border-radius: 50%;
+        }
+
+        /* Зеленая стрелка для клапанов */
+        .apple-card--valve .arrow {
+            color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .apple-card:active .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Футер */
+        .footer {
+            background: #f5f5f7;
+            border-top: 1px solid #d2d2d7;
+            padding: 20px 16px;
+        }
+
+        .footer__container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            color: #86868b;
+            font-size: 13px;
+        }
+
+        /* Анимации */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .apple-card {
+            animation: slideIn 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        .apple-card:nth-child(1) { animation-delay: 0.05s; }
+        .apple-card:nth-child(2) { animation-delay: 0.1s; }
+        .apple-card:nth-child(3) { animation-delay: 0.15s; }
+        .apple-card:nth-child(4) { animation-delay: 0.2s; }
+        .apple-card:nth-child(5) { animation-delay: 0.25s; }
+        .apple-card:nth-child(6) { animation-delay: 0.3s; }
+
+        /* Десктопная версия */
+        @media (min-width: 768px) {
+            .main {
+                padding: 40px 24px;
+            }
+            
+            .page-title {
+                text-align: center;
+                margin-bottom: 48px;
+            }
+            
+            .page-title h1 {
+                font-size: 48px;
+            }
+            
+            .page-title p {
+                font-size: 20px;
+                margin: 0 auto;
+            }
+            
+            .cards-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+            
+            .apple-card {
+                padding: 30px 24px;
+                min-height: auto;
+            }
+            
+            .apple-card:active {
+                transform: none;
+            }
+            
+            .apple-card:hover {
+                transform: scale(1.02) translateY(-4px);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            }
+            
+            .floor-number {
+                font-size: 56px;
+            }
+            
+            .apple-card h2 {
+                font-size: 28px;
+            }
+            
+            .card-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            
+            .floor-number {
+                min-width: auto;
+                text-align: left;
+            }
+        }
+
+        /* Для очень маленьких экранов */
+        @media (max-width: 374px) {
+            .floor-number {
+                font-size: 40px;
+                min-width: 70px;
+            }
+            
+            .apple-card h2 {
+                font-size: 20px;
+            }
+            
+            .zone-badge {
+                font-size: 12px;
+            }
+        }
+
+        /* Убираем задержку при тапе на iOS */
+        .apple-card {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header__container">
+            <div class="header__logo">СПДВ/Клапана/ОЗК</div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="page-title">
+            <h1>Зоны здания</h1>
+            <p>Выберите зону для проведения проверки</p>
+        </div>
+
+        <div class="cards-grid">
+            <!-- ========== ВЕНТКАМЕРЫ (синие) ========== -->
+            <!-- Нижняя зона (венткамеры) -->
+            <a href="" class="apple-card">
+                <div class="card-top">
+                    <div class="floor-number">1/13</div>
+                    <div class="zone-info">
+                        <div class="zone-badge">Зона 1 · Нижняя</div>
+                        <h2>Нижняя зона</h2>
+                    </div>
+                </div>
+                <p class="card-description">СПДВ · Венткамеры</p>
+                <div class="card-meta">
+                    <div class="items-count">
+                        <span>28</span> пунктов
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Средняя зона (венткамеры) -->
+            <a href="#" class="apple-card">
+                <div class="card-top">
+                    <div class="floor-number">14-26</div>
+                    <div class="zone-info">
+                        <div class="zone-badge">Зона 2 · Средняя</div>
+                        <h2>Средняя зона</h2>
+                    </div>
+                </div>
+                <p class="card-description">СПДВ · Венткамеры</p>
+                <div class="card-meta">
+                    <div class="items-count">
+                        <span>36</span> пунктов
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Верхняя зона (венткамеры) -->
+            <a href="#" class="apple-card">
+                <div class="card-top">
+                    <div class="floor-number">27/41</div>
+                    <div class="zone-info">
+                        <div class="zone-badge">Зона 3 · Верхняя</div>
+                        <h2>Верхняя зона</h2>
+                    </div>
+                </div>
+                <p class="card-description">СПДВ · Венткамеры</p>
+                <div class="card-meta">
+                    <div class="items-count">
+                        <span>24</span> пункта
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </a>
+
+            <!-- ========== КЛАПАНЫ (зеленые) ========== -->
+            <!-- Нижняя зона (клапана) -->
+            <a href="" class="apple-card apple-card--valve">
+                <div class="card-top">
+                    <div class="floor-number">1/13</div>
+                    <div class="zone-info">
+                        <div class="zone-badge">Зона 1 · Нижняя</div>
+                        <h2>Нижняя зона</h2>
+                    </div>
+                </div>
+                <p class="card-description">СПДВ · Клапана</p>
+                <div class="card-meta">
+                    <div class="items-count">
+                        <span>28</span> пунктов
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Средняя зона (клапана) -->
+            <a href="#" class="apple-card apple-card--valve">
+                <div class="card-top">
+                    <div class="floor-number">14-26</div>
+                    <div class="zone-info">
+                        <div class="zone-badge">Зона 2 · Средняя</div>
+                        <h2>Средняя зона</h2>
+                    </div>
+                </div>
+                <p class="card-description">СПДВ · Клапана</p>
+                <div class="card-meta">
+                    <div class="items-count">
+                        <span>36</span> пунктов
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Верхняя зона (клапана) -->
+            <a href="#" class="apple-card apple-card--valve">
+                <div class="card-top">
+                    <div class="floor-number">27/41</div>
+                    <div class="zone-info">
+                        <div class="zone-badge">Зона 3 · Верхняя</div>
+                        <h2>Верхняя зона</h2>
+                    </div>
+                </div>
+                <p class="card-description">СПДВ · Клапана</p>
+                <div class="card-meta">
+                    <div class="items-count">
+                        <span>24</span> пункта
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__container">
+            <p>© 2026 Building Zone Checklist · Система контроля здания</p>
+        </div>
+    </footer>
+</body>
+</html>
